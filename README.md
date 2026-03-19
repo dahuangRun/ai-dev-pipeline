@@ -172,10 +172,67 @@ deploy:
 
 ## 内网部署
 
-如果你的环境无法访问 GitHub / npm，请参考 [内网部署指南](docs/internal-deploy.md)，支持：
+如果你的环境无法访问 GitHub / npm，有两种方式可用：
 
-- **离线 tgz 包安装** — 打包一次，拷贝到内网直接用
-- **内网 Git 仓库安装** — 推送到 GitLab/Gitea，团队共享
+### 方案一：离线 tgz 包（最简单）
+
+```bash
+# === 有网环境：打包 ===
+git clone https://github.com/dahuangRun/claude-dev-pipeline.git
+cd claude-dev-pipeline
+npm pack
+# 产出 claude-dev-pipeline-1.0.0.tgz
+
+# === 拷贝到内网后 ===
+
+# 全局安装（推荐，多次使用更方便）
+npm install -g /shared/tools/claude-dev-pipeline-1.0.0.tgz
+claude-dev-pipeline init
+
+# 或 npx 一次性运行（不安装）
+npx /shared/tools/claude-dev-pipeline-1.0.0.tgz init
+
+# 或作为项目 devDependency
+npm install --save-dev /shared/tools/claude-dev-pipeline-1.0.0.tgz
+npx claude-dev-pipeline init
+```
+
+更新时重新打包、拷贝、安装即可。
+
+### 方案二：内网 Git 仓库（团队推荐）
+
+```bash
+# === 管理员：首次推送到内网 GitLab/Gitea ===
+git clone https://github.com/dahuangRun/claude-dev-pipeline.git
+cd claude-dev-pipeline
+git remote add internal http://gitlab.yourcompany.com/devtools/claude-dev-pipeline.git
+git push internal master
+
+# === 管理员：定期同步上游更新 ===
+git pull origin master
+git push internal master
+
+# === 开发者：安装使用 ===
+
+# 全局安装
+npm install -g git+http://gitlab.yourcompany.com/devtools/claude-dev-pipeline.git
+claude-dev-pipeline init
+
+# 或克隆后 link（更新只需 git pull）
+git clone http://gitlab.yourcompany.com/devtools/claude-dev-pipeline.git ~/tools/cdp
+cd ~/tools/cdp && npm link
+claude-dev-pipeline init
+```
+
+### 方案对比
+
+| | 离线 tgz | 内网 Git |
+|---|---|---|
+| 前置条件 | 只需 Node.js | 需要内网 Git 服务 |
+| 更新方式 | 重新打包 + 拷贝 | `git pull` + `git push` |
+| 适合场景 | 个人使用、临时环境 | 团队长期使用 |
+
+> 详细说明见 [内网部署完整指南](docs/internal-deploy.md)
 
 ## 设计原则
 

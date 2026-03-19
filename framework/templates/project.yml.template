@@ -1,0 +1,56 @@
+# .ai/project.yml — AI 开发流水线项目配置
+# 由 /init-pipeline 自动生成，可手动调整
+
+project:
+  name: ""                    # 项目名称
+  description: ""             # 一句话描述
+  language: ""                # java | python | go | typescript | rust | ruby | csharp
+  framework: ""               # spring-boot | django | flask | nextjs | nuxt | gin | echo | rails | actix | none
+  language_version: ""        # 如 "17", "3.12", "1.21", "20"
+
+# 构建与测试命令
+commands:
+  build: ""                   # 构建命令，如 ./gradlew build
+  test: ""                    # 测试命令，如 ./gradlew test
+  lint: ""                    # Lint 命令（可选）
+  dev: ""                     # 本地开发启动命令
+  format: ""                  # 代码格式化命令（可选）
+
+# 项目目录结构
+structure:
+  backend:
+    root: ""                  # 后端代码根目录
+    layers: {}                # 分层架构目录映射，如 { entity: "entity/", service: "service/" }
+    test_root: ""             # 测试代码根目录
+  frontend:
+    root: ""                  # 前端代码根目录（无前端则留空）
+    components: ""            # 组件目录
+    router: ""                # 路由文件
+    api_client: ""            # API 客户端文件
+  database:
+    migration_dir: ""         # 数据库迁移目录
+    migration_format: ""      # 迁移文件命名格式
+
+# 编码规范
+coding_standards_file: ".ai/coding-standards.md"
+
+# 部署配置
+deploy:
+  method: "none"              # script | docker-compose | k8s | vercel | netlify | github-actions | none
+  command: ""                 # 部署命令（method=script 时）
+  server: ""                  # 目标服务器地址
+  port: 8080                  # 服务端口
+  health_check: []            # 健康检查路径列表，如 ["/", "/api/health"]
+
+# UI 测试配置
+ui_test:
+  enabled: false
+  base_url: "http://localhost:8080"
+  fallback_url: ""            # 备用测试 URL（如远程服务器）
+  test_dir: "e2e/tests/"
+  results_dir: "e2e/results/"
+
+# 文件分类规则（用于 change_scope 自动判断）
+file_classification:
+  backend: []                 # 如 ["*.java", "*.xml", "*.yml", "*.sql"]
+  frontend: []                # 如 ["*.html", "*.js", "*.css", "*.vue", "*.tsx"]

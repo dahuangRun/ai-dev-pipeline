@@ -170,6 +170,13 @@ deploy:
 
 重新运行安装脚本，会更新 prompt 和 skill，不覆盖 `project.yml`。
 
+## 内网部署
+
+如果你的环境无法访问 GitHub / npm，请参考 [内网部署指南](docs/internal-deploy.md)，支持：
+
+- **离线 tgz 包安装** — 打包一次，拷贝到内网直接用
+- **内网 Git 仓库安装** — 推送到 GitLab/Gitea，团队共享
+
 ## 设计原则
 
 - **文件驱动通信**：角色之间通过 `.ai/artifacts/` 文件传递信息，不共享上下文

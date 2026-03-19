@@ -7,20 +7,21 @@
 在你的项目根目录执行：
 
 ```bash
-# 克隆框架
-git clone https://github.com/yourorg/claude-dev-pipeline.git /tmp/claude-dev-pipeline
+npx ai-dev-pipeline init
+```
 
-# 安装到当前项目
-sh /tmp/claude-dev-pipeline/install.sh
+CLI 会自动检测你使用的 AI 编码工具（Claude Code / Cursor / CodeBuddy / Codex），并安装对应格式的技能文件。也可以手动指定：
+
+```bash
+npx ai-dev-pipeline init --tool cursor
 ```
 
 ### 2. 初始化配置
 
-在 Claude Code 中执行：
+在你的 AI 编码工具中执行 init-pipeline 指令：
 
-```
-/init-pipeline
-```
+- **Claude Code**: 运行 `/init-pipeline`
+- **Cursor / 其他工具**: 告诉 AI "阅读 init-pipeline 技能文件并执行"
 
 AI 会自动扫描项目，识别技术栈、目录结构、构建命令，生成配置文件。你只需确认结果。
 

@@ -2,9 +2,9 @@
 
 ## 概述
 
-这是一个基于 Claude Code 的 AI 驱动全自动开发流水线框架。通过 Skill + Subagent 混合架构，实现从需求到部署的完整自动化流程。
+这是一个 AI 驱动的全自动开发流水线框架。通过多角色协作架构，实现从需求到部署的完整自动化流程。
 
-本框架**与具体技术栈无关**，通过 `.ai/project.yml` 配置文件适配任意项目。
+本框架**与具体技术栈和 AI 工具无关**，通过 `.ai/project.yml` 配置文件适配任意项目，支持 Claude Code / Cursor / CodeBuddy / Codex 等多种 AI 编码工具。
 
 ## 核心架构：Skill + Subagent 混合
 
@@ -12,27 +12,27 @@
 
 | 机制 | 上下文 | 交互能力 | 适用角色 |
 |------|--------|---------|---------|
-| **Skill** | 共享主会话上下文 | 可与用户交互 | Analyst, Ship |
-| **Subagent** | 独立上下文（隔离） | 不可交互，纯执行 | Planner, Coder, Reviewer, QA, UI Test |
+| **主会话执行** | 共享当前对话上下文 | 可与用户交互 | Analyst, Ship |
+| **独立代理执行** | 独立上下文（隔离） | 不可交互，纯执行 | Planner, Coder, Reviewer, QA, UI Test |
 
 ### 为什么混合？
 
-- **纯 Skill 问题**：Reviewer 能看到 Coder 的推理过程 → 审查不独立；上下文膨胀
-- **纯 Subagent 问题**：Analyst 无法向用户提问；Ship 无法展示部署进度
-- **混合方案**：按角色需求选择机制，兼顾隔离性和交互性
+- **纯主会话问题**：Reviewer 能看到 Coder 的推理过程 → 审查不独立；上下文膨胀
+- **纯独立代理问题**：Analyst 无法向用户提问；Ship 无法展示部署进度
+- **混合方案**：按角色需求选择执行机制，兼顾隔离性和交互性
 
 ### 角色分配
 
 | 角色 | 机制 | 原因 |
 |------|------|------|
-| Analyst | Skill | 需要与用户交互澄清需求 |
-| Planner | Subagent | 纯输出，与 Analyst 思维隔离 |
-| Coder | Subagent | 长任务，独立上下文 |
-| Reviewer | Subagent | **关键隔离点** — 不能看到 Coder 过程 |
-| QA | Subagent | 纯执行，独立测试 |
-| UI Test | Subagent | Playwright 自动化 |
-| Ship | Skill | 展示进度，处理部署失败 |
-| Orchestrator (dev) | Skill | 管理流程，处理人工审批 |
+| Analyst | 主会话 | 需要与用户交互澄清需求 |
+| Planner | 独立代理 | 纯输出，与 Analyst 思维隔离 |
+| Coder | 独立代理 | 长任务，独立上下文 |
+| Reviewer | 独立代理 | **关键隔离点** — 不能看到 Coder 过程 |
+| QA | 独立代理 | 纯执行，独立测试 |
+| UI Test | 独立代理 | Playwright 自动化 |
+| Ship | 主会话 | 展示进度，处理部署失败 |
+| Orchestrator (dev) | 主会话 | 管理流程，处理人工审批 |
 
 ## 通信机制：文件驱动
 

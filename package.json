@@ -1,21 +1,23 @@
 {
-  "name": "claude-dev-pipeline",
-  "version": "1.0.0",
-  "description": "AI 驱动的全自动开发流水线框架，基于 Claude Code 的 Skill + Subagent 混合架构",
+  "name": "ai-dev-pipeline",
+  "version": "2.0.0",
+  "description": "AI 驱动的全自动开发流水线框架，支持 Claude Code / Cursor / CodeBuddy / Codex 等多种 AI 编码工具",
   "bin": {
-    "claude-dev-pipeline": "./bin/cli.js"
+    "ai-dev-pipeline": "./bin/cli.js"
   },
   "files": [
     "bin/",
     "framework/"
   ],
   "keywords": [
-    "claude",
-    "claude-code",
     "ai",
     "pipeline",
     "development",
-    "automation"
+    "automation",
+    "claude-code",
+    "cursor",
+    "codebuddy",
+    "codex"
   ],
   "author": "",
   "license": "MIT",

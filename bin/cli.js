@@ -40,8 +40,8 @@ const TOOLS = {
   },
   codebuddy: {
     name: 'CodeBuddy',
-    skillDir: '.codebuddy/rules',
-    skillFormat: 'generic',
+    skillDir: '.codebuddy/skills',
+    skillFormat: 'codebuddy',
     detect: () => fs.existsSync(path.join(TARGET_DIR, '.codebuddy')),
   },
   generic: {
@@ -131,6 +131,24 @@ function installSkills(tool) {
     return skillEntries.length;
   }
 
+  if (tool.skillFormat === 'codebuddy') {
+    // CodeBuddy: .codebuddy/skills/ 下每个技能一个 .md 文件（保留 frontmatter）
+    console.log(`安装技能 → ${tool.skillDir}/ (CodeBuddy 格式)...`);
+    const destDir = path.join(TARGET_DIR, tool.skillDir);
+    ensureDir(destDir);
+
+    for (const entry of skillEntries) {
+      const skillFile = path.join(skillsSrcDir, entry.name, 'SKILL.md');
+      if (!fs.existsSync(skillFile)) continue;
+      fs.copyFileSync(skillFile, path.join(destDir, `${entry.name}.md`));
+    }
+
+    // 生成命令路由规则到 .codebuddy/rules/，让 AI 自动识别斜杠命令
+    generateCodeBuddyCommandRouter(skillsSrcDir, skillEntries);
+
+    return skillEntries.length;
+  }
+
   // Generic: 合并为单个指令文件
   console.log(`安装技能 → ${tool.skillDir}/ (通用格式)...`);
   const destDir = path.join(TARGET_DIR, tool.skillDir);
@@ -159,6 +177,68 @@ function installSkills(tool) {
     fs.copyFileSync(skillFile, path.join(destDir, `${entry.name}.md`));
   }
   return skillEntries.length;
+}
+
+function generateCodeBuddyCommandRouter(skillsSrcDir, skillEntries) {
+  const rulesDir = path.join(TARGET_DIR, '.codebuddy/rules');
+  ensureDir(rulesDir);
+
+  // 从每个 SKILL.md 的 frontmatter 提取命令信息
+  const commands = [];
+  for (const entry of skillEntries) {
+    const skillFile = path.join(skillsSrcDir, entry.name, 'SKILL.md');
+    if (!fs.existsSync(skillFile)) continue;
+    const content = fs.readFileSync(skillFile, 'utf-8');
+    const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
+    let description = '';
+    if (fmMatch) {
+      const descMatch = fmMatch[1].match(/description:\s*"([^"]+)"/);
+      if (descMatch) description = descMatch[1];
+    }
+    // 提取触发词（到第一个句号为止）
+    const triggerMatch = description.match(/触发词[：:]\s*([^。]+)/);
+    const triggers = triggerMatch ? triggerMatch[1].trim() : `/${entry.name}`;
+    // 提取简短说明（触发词之前的内容）
+    const brief = description.replace(/触发词[：:].+$/, '').trim();
+    commands.push({ name: entry.name, brief, triggers });
+  }
+
+  let router = `# AI Dev Pipeline — 命令路由
+
+> 此文件由 ai-dev-pipeline 自动生成。当用户输入以下命令时，请读取对应的 skill 文件并严格按照其中的指令执行。
+
+## 可用命令
+
+| 命令 | 说明 |
+|------|------|
+`;
+
+  for (const cmd of commands) {
+    router += `| \`/${cmd.name}\` | ${cmd.brief} |\n`;
+  }
+
+  router += `
+## 命令路由规则
+
+当用户输入以下任何触发词时，读取对应的 skill 文件并执行：
+
+`;
+
+  for (const cmd of commands) {
+    router += `- **${cmd.triggers}** → 读取 \`.codebuddy/skills/${cmd.name}.md\` 并执行\n`;
+  }
+
+  router += `
+## 执行方式
+
+1. 用户输入命令（如 \`/dev "需求描述"\`）
+2. 根据上方路由表，找到对应的 skill 文件路径
+3. 读取该 skill 文件的完整内容
+4. 严格按照 skill 文件中的指令执行，将命令后的参数作为输入
+`;
+
+  fs.writeFileSync(path.join(rulesDir, 'ai-dev-pipeline-commands.md'), router);
+  console.log(`安装命令路由 → .codebuddy/rules/ai-dev-pipeline-commands.md`);
 }
 
 function convertToCursorFormat(content, skillName) {
@@ -259,6 +339,11 @@ function cmdInit(toolName) {
     console.log('  2. 告诉 AI: "阅读 .ai/instructions/ 下的 init-pipeline.md 并执行"');
     console.log('  3. AI 会自动扫描项目并生成配置');
     console.log('  4. 确认配置后告诉 AI: "阅读 .ai/instructions/dev.md，执行全流程开发"');
+  } else if (tool.id === 'codebuddy') {
+    console.log('  1. 在 CodeBuddy 中打开此项目');
+    console.log('  2. 告诉 AI: "阅读 .codebuddy/skills/init-pipeline.md 并执行"');
+    console.log('  3. AI 会自动扫描项目并生成配置');
+    console.log('  4. 确认配置后告诉 AI: "阅读 .codebuddy/skills/dev.md，执行全流程开发"');
   } else {
     console.log('  1. 在你的 AI 编码工具中打开此项目');
     console.log('  2. 告诉 AI: "阅读 .ai/instructions/init-pipeline.md 并执行"');
@@ -362,7 +447,7 @@ function cmdDoctor(toolName) {
     for (const name of requiredSkills) {
       check(`${name}/SKILL.md`, fileExists(`${tool.skillDir}/${name}/SKILL.md`));
     }
-  } else if (tool.skillFormat === 'cursor') {
+  } else if (tool.skillFormat === 'cursor' || tool.skillFormat === 'codebuddy') {
     const requiredSkills = ['analyst', 'planner', 'coder', 'reviewer', 'qa', 'ui-test', 'dev', 'ship', 'init-pipeline'];
     for (const name of requiredSkills) {
       check(`${name}.md`, fileExists(`${tool.skillDir}/${name}.md`));
@@ -418,7 +503,7 @@ ${color.yellow('示例:')}
 ${color.yellow('支持的 AI 工具:')}
   claude-code   Claude Code (.claude/skills/)
   cursor        Cursor (.cursor/rules/)
-  codebuddy     CodeBuddy (.codebuddy/rules/)
+  codebuddy     CodeBuddy (.codebuddy/skills/)
   codex         Codex (.codex/)
   generic       通用（生成指令文件到 .ai/instructions/）
 `);

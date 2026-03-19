@@ -23,9 +23,10 @@ AI 驱动的全自动开发流水线框架，基于 Claude Code 的 Skill + Suba
 
 ### 1. 安装到项目
 
+在你的项目根目录执行：
+
 ```bash
-git clone https://github.com/yourorg/claude-dev-pipeline.git /tmp/cdp
-sh /tmp/cdp/install.sh /path/to/your/project
+npx claude-dev-pipeline init
 ```
 
 ### 2. 自动初始化配置
@@ -36,7 +37,7 @@ sh /tmp/cdp/install.sh /path/to/your/project
 /init-pipeline
 ```
 
-AI 自动扫描项目，生成配置文件。你只需确认。
+AI 自动扫描项目，识别技术栈、目录结构、构建命令，生成配置文件。你只需确认。
 
 ### 3. 开始使用
 

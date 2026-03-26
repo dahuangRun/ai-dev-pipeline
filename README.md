@@ -33,20 +33,79 @@ AI 驱动的全自动开发流水线框架，支持多种 AI 编码工具。
 
 Claude Code 和 CodeBuddy 均采用 `skills/<name>/SKILL.md` 目录结构，安装后所有技能自动注册为原生斜杠命令。
 
+## 安装
+
+### 在线安装（推荐）
+
+需要 Node.js >= 16。
+
+```bash
+# 方式一：npx 一次性运行（无需全局安装）
+npx ai-dev-pipeline init
+
+# 方式二：全局安装后使用
+npm install -g ai-dev-pipeline
+ai-dev-pipeline init
+
+# 可指定 AI 工具
+npx ai-dev-pipeline init --tool claude-code
+npx ai-dev-pipeline init --tool codebuddy
+npx ai-dev-pipeline init --tool cursor
+```
+
+### 离线安装（无法访问 npm/GitHub）
+
+#### 方式一：tgz 离线包（最简单）
+
+```bash
+# === 在有网环境打包 ===
+git clone https://github.com/dahuangRun/ai-dev-pipeline.git
+cd ai-dev-pipeline
+npm pack
+# 产出 ai-dev-pipeline-2.0.0.tgz，拷贝到目标环境
+
+# === 在离线环境安装 ===
+
+# 全局安装
+npm install -g ./ai-dev-pipeline-2.0.0.tgz
+ai-dev-pipeline init
+
+# 或 npx 一次性运行
+npx ./ai-dev-pipeline-2.0.0.tgz init
+```
+
+#### 方式二：Git 仓库镜像（团队推荐）
+
+```bash
+# === 管理员：推送到内网 GitLab/Gitea ===
+git clone https://github.com/dahuangRun/ai-dev-pipeline.git
+cd ai-dev-pipeline
+git remote add internal http://gitlab.yourcompany.com/devtools/ai-dev-pipeline.git
+git push internal master
+
+# === 开发者：从内网安装 ===
+npm install -g git+http://gitlab.yourcompany.com/devtools/ai-dev-pipeline.git
+ai-dev-pipeline init --tool codebuddy
+```
+
+#### 方式三：Shell 脚本直装（无需 Node.js）
+
+```bash
+# 克隆或拷贝仓库到本地后，直接运行安装脚本
+git clone https://github.com/dahuangRun/ai-dev-pipeline.git
+cd ai-dev-pipeline
+bash install.sh /path/to/your/project
+```
+
+> 注：Shell 脚本仅安装 Claude Code 格式的技能。如需其他 AI 工具格式，请使用 CLI 安装。
+
+> 详细内网部署说明见 [内网部署完整指南](docs/internal-deploy.md)
+
 ## 快速开始
 
 ### 1. 安装到项目
 
-在你的项目根目录执行：
-
-```bash
-# 自动检测 AI 工具
-npx ai-dev-pipeline init
-
-# 或指定工具
-npx ai-dev-pipeline init --tool claude-code
-npx ai-dev-pipeline init --tool codebuddy
-```
+在你的项目根目录执行安装（参考上方 [安装](#安装) 章节），然后继续配置。
 
 ### 2. 自动初始化配置
 
@@ -226,45 +285,6 @@ ai-dev-pipeline update
 ```
 
 更新 prompt 和技能，不覆盖 `project.yml` 和 `coding-standards.md`。
-
-## 内网部署
-
-如果你的环境无法访问 GitHub / npm，有两种方式可用：
-
-### 方案一：离线 tgz 包（最简单）
-
-```bash
-# === 有网环境：打包 ===
-git clone https://github.com/dahuangRun/ai-dev-pipeline.git
-cd ai-dev-pipeline
-npm pack
-# 产出 ai-dev-pipeline-2.0.0.tgz
-
-# === 拷贝到内网后 ===
-
-# 全局安装
-npm install -g /shared/tools/ai-dev-pipeline-2.0.0.tgz
-ai-dev-pipeline init
-
-# 或 npx 一次性运行
-npx /shared/tools/ai-dev-pipeline-2.0.0.tgz init
-```
-
-### 方案二：内网 Git 仓库（团队推荐）
-
-```bash
-# === 管理员：推送到内网 GitLab/Gitea ===
-git clone https://github.com/dahuangRun/ai-dev-pipeline.git
-cd ai-dev-pipeline
-git remote add internal http://gitlab.yourcompany.com/devtools/ai-dev-pipeline.git
-git push internal master
-
-# === 开发者：安装使用 ===
-npm install -g git+http://gitlab.yourcompany.com/devtools/ai-dev-pipeline.git
-ai-dev-pipeline init --tool codebuddy
-```
-
-> 详细说明见 [内网部署完整指南](docs/internal-deploy.md)
 
 ## 设计原则
 

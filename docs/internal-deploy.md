@@ -285,10 +285,11 @@ ai-dev-pipeline update
 ```bash
 # 1. 安装框架到项目
 ai-dev-pipeline init
+```
 
-# 2. 在 AI 编码工具中自动扫描生成配置
-/init-pipeline
+然后在 AI 工具（Claude Code / CodeBuddy）中使用斜杠命令：
 
-# 3. 开始开发
-/dev "你的需求"
+```
+/init-pipeline          # 自动扫描项目生成配置
+/dev "你的需求"          # 全自动开发流水线
 ```

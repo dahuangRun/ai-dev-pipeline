@@ -132,20 +132,10 @@ function installSkills(tool) {
   }
 
   if (tool.skillFormat === 'codebuddy') {
-    // CodeBuddy: .codebuddy/skills/ 下每个技能一个 .md 文件（保留 frontmatter）
+    // CodeBuddy: .codebuddy/skills/*/SKILL.md（与 Claude Code 相同的子目录结构）
+    // 这样每个技能自动注册为原生斜杠命令 /skill-name
     console.log(`安装技能 → ${tool.skillDir}/ (CodeBuddy 格式)...`);
-    const destDir = path.join(TARGET_DIR, tool.skillDir);
-    ensureDir(destDir);
-
-    for (const entry of skillEntries) {
-      const skillFile = path.join(skillsSrcDir, entry.name, 'SKILL.md');
-      if (!fs.existsSync(skillFile)) continue;
-      fs.copyFileSync(skillFile, path.join(destDir, `${entry.name}.md`));
-    }
-
-    // 生成命令路由规则到 .codebuddy/rules/，让 AI 自动识别斜杠命令
-    generateCodeBuddyCommandRouter(skillsSrcDir, skillEntries);
-
+    copyDir(skillsSrcDir, path.join(TARGET_DIR, tool.skillDir));
     return skillEntries.length;
   }
 
@@ -179,67 +169,6 @@ function installSkills(tool) {
   return skillEntries.length;
 }
 
-function generateCodeBuddyCommandRouter(skillsSrcDir, skillEntries) {
-  const rulesDir = path.join(TARGET_DIR, '.codebuddy/rules');
-  ensureDir(rulesDir);
-
-  // 从每个 SKILL.md 的 frontmatter 提取命令信息
-  const commands = [];
-  for (const entry of skillEntries) {
-    const skillFile = path.join(skillsSrcDir, entry.name, 'SKILL.md');
-    if (!fs.existsSync(skillFile)) continue;
-    const content = fs.readFileSync(skillFile, 'utf-8');
-    const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
-    let description = '';
-    if (fmMatch) {
-      const descMatch = fmMatch[1].match(/description:\s*"([^"]+)"/);
-      if (descMatch) description = descMatch[1];
-    }
-    // 提取触发词（到第一个句号为止）
-    const triggerMatch = description.match(/触发词[：:]\s*([^。]+)/);
-    const triggers = triggerMatch ? triggerMatch[1].trim() : `/${entry.name}`;
-    // 提取简短说明（触发词之前的内容）
-    const brief = description.replace(/触发词[：:].+$/, '').trim();
-    commands.push({ name: entry.name, brief, triggers });
-  }
-
-  let router = `# AI Dev Pipeline — 命令路由
-
-> 此文件由 ai-dev-pipeline 自动生成。当用户输入以下命令时，请读取对应的 skill 文件并严格按照其中的指令执行。
-
-## 可用命令
-
-| 命令 | 说明 |
-|------|------|
-`;
-
-  for (const cmd of commands) {
-    router += `| \`/${cmd.name}\` | ${cmd.brief} |\n`;
-  }
-
-  router += `
-## 命令路由规则
-
-当用户输入以下任何触发词时，读取对应的 skill 文件并执行：
-
-`;
-
-  for (const cmd of commands) {
-    router += `- **${cmd.triggers}** → 读取 \`.codebuddy/skills/${cmd.name}.md\` 并执行\n`;
-  }
-
-  router += `
-## 执行方式
-
-1. 用户输入命令（如 \`/dev "需求描述"\`）
-2. 根据上方路由表，找到对应的 skill 文件路径
-3. 读取该 skill 文件的完整内容
-4. 严格按照 skill 文件中的指令执行，将命令后的参数作为输入
-`;
-
-  fs.writeFileSync(path.join(rulesDir, 'ai-dev-pipeline-commands.md'), router);
-  console.log(`安装命令路由 → .codebuddy/rules/ai-dev-pipeline-commands.md`);
-}
 
 function convertToCursorFormat(content, skillName) {
   // 提取 frontmatter 中的 description
@@ -341,9 +270,8 @@ function cmdInit(toolName) {
     console.log('  4. 确认配置后告诉 AI: "阅读 .ai/instructions/dev.md，执行全流程开发"');
   } else if (tool.id === 'codebuddy') {
     console.log('  1. 在 CodeBuddy 中打开此项目');
-    console.log('  2. 告诉 AI: "阅读 .codebuddy/skills/init-pipeline.md 并执行"');
-    console.log('  3. AI 会自动扫描项目并生成配置');
-    console.log('  4. 确认配置后告诉 AI: "阅读 .codebuddy/skills/dev.md，执行全流程开发"');
+    console.log('  2. 运行 /init-pipeline 自动扫描项目并生成配置');
+    console.log('  3. 确认配置后即可使用 /dev "需求" 开始开发');
   } else {
     console.log('  1. 在你的 AI 编码工具中打开此项目');
     console.log('  2. 告诉 AI: "阅读 .ai/instructions/init-pipeline.md 并执行"');
@@ -442,12 +370,12 @@ function cmdDoctor(toolName) {
   }
 
   console.log('\n技能定义:');
-  if (tool.skillFormat === 'claude') {
+  if (tool.skillFormat === 'claude' || tool.skillFormat === 'codebuddy') {
     const requiredSkills = ['analyst', 'planner', 'coder', 'reviewer', 'qa', 'ui-test', 'dev', 'ship', 'init-pipeline'];
     for (const name of requiredSkills) {
       check(`${name}/SKILL.md`, fileExists(`${tool.skillDir}/${name}/SKILL.md`));
     }
-  } else if (tool.skillFormat === 'cursor' || tool.skillFormat === 'codebuddy') {
+  } else if (tool.skillFormat === 'cursor') {
     const requiredSkills = ['analyst', 'planner', 'coder', 'reviewer', 'qa', 'ui-test', 'dev', 'ship', 'init-pipeline'];
     for (const name of requiredSkills) {
       check(`${name}.md`, fileExists(`${tool.skillDir}/${name}.md`));
@@ -481,7 +409,6 @@ ${color.green('AI Dev Pipeline')} — AI 驱动的全自动开发流水线
 
 ${color.yellow('用法:')}
   ai-dev-pipeline <command> [--tool <tool>]
-  npx ai-dev-pipeline <command> [--tool <tool>]
 
 ${color.yellow('命令:')}
   init      安装流水线框架到当前项目
@@ -497,15 +424,20 @@ ${color.yellow('示例:')}
   ai-dev-pipeline init                    # 自动检测 AI 工具
   ai-dev-pipeline init --tool cursor      # 指定 Cursor
   ai-dev-pipeline init --tool claude-code # 指定 Claude Code
+  ai-dev-pipeline init --tool codebuddy   # 指定 CodeBuddy
   ai-dev-pipeline update                  # 更新框架
   ai-dev-pipeline doctor                  # 检查配置
 
-${color.yellow('支持的 AI 工具:')}
-  claude-code   Claude Code (.claude/skills/)
-  cursor        Cursor (.cursor/rules/)
-  codebuddy     CodeBuddy (.codebuddy/skills/)
-  codex         Codex (.codex/)
-  generic       通用（生成指令文件到 .ai/instructions/）
+${color.yellow('安装后在 AI 工具内使用斜杠命令:')}
+  /dev "需求描述"      全自动流水线（7 步）
+  /analyst "需求"      需求分析，生成 PRD
+  /planner             技术设计 + 测试计划
+  /coder               编码实现
+  /reviewer            独立代码审查
+  /qa                  测试验证
+  /ui-test             UI 浏览器测试
+  /ship                发布部署
+  /init-pipeline       自动扫描项目，生成配置
 `);
 }
 
